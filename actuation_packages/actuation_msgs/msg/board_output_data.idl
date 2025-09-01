@@ -1,10 +1,13 @@
+#include "cartesian_sample.idl"
+#include "curvilinear_sample.idl"
+
 module board_output_data
 {
   struct msg
   {
-    sequence<double> x;
-    sequence<double> y;
-    boolean feasibility;
-    double cost;
+    sequence<trajectory_data::cartesian_sample> samples; ///< Sequence of trajectory samples
+    sequence<trajectory_data::curvilinear_sample> samples_curv;
+    sequence<boolean> feasibility;                      ///< Sequence of feasibility flags
+    sequence<double> cost;                              ///< Sequence of costs
   };
 };

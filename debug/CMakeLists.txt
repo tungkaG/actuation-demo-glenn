@@ -10,6 +10,8 @@ find_package(Eigen3 REQUIRED)
 add_executable(subscriber
   subscriber.cpp
   msg/board_input_data.c
+  msg/cartesian_sample.c
+  msg/curvilinear_sample.c
   msg/board_output_data.c
 )
 

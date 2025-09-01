@@ -11,6 +11,8 @@ find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "msg/HpcInputData.msg"
+  "msg/CartesianSample.msg"
+  "msg/CurvilinearSample.msg"
   "msg/HpcOutputData.msg"
 )
 # uncomment the following section in order to fill in

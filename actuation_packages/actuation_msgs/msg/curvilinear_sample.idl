@@ -1,0 +1,12 @@
+module trajectory_data
+{
+  struct curvilinear_sample
+  {
+    sequence<double> s;  
+    sequence<double> ss; 
+    sequence<double> sss;      
+    sequence<double> d; 
+    sequence<double> dd; 
+    sequence<double> ddd;     
+  };
+};

@@ -9,6 +9,8 @@
 #include <actuation_message_converter/visibility_control.hpp>
 
 #include "rt_motion_planning_hpc_msgs/msg/hpc_input_data.hpp"
+#include "rt_motion_planning_hpc_msgs/msg/cartesian_sample.hpp"
+#include "rt_motion_planning_hpc_msgs/msg/curvilinear_sample.hpp"
 #include "rt_motion_planning_hpc_msgs/msg/hpc_output_data.hpp"
 
 #include <rclcpp/rclcpp.hpp>
@@ -22,6 +24,8 @@ namespace actuation_message_converter
 // using autoware_auto_control_msgs::msg::AckermannControlCommand;
 // using nav_msgs::msg::Odometry;
 using rt_motion_planning_hpc_msgs::msg::HpcInputData;
+using rt_motion_planning_hpc_msgs::msg::CartesianSample;
+using rt_motion_planning_hpc_msgs::msg::CurvilinearSample;
 using rt_motion_planning_hpc_msgs::msg::HpcOutputData;
 
 

@@ -1,0 +1,13 @@
+module trajectory_data
+{
+  struct cartesian_sample
+  {
+    sequence<double> x;            ///< The x positions in cartesian coordinates
+    sequence<double> y;            ///< The y positions in cartesian coordinates
+    sequence<double> theta;        ///< The orientation of the sample
+    sequence<double> velocity;     ///< The velocity of the sample
+    sequence<double> acceleration; ///< The acceleration of the sample
+    sequence<double> kappa;        ///< The curvature of the path
+    sequence<double> kappaDot;     ///< The curvature rate of change of the path
+  };
+};

@@ -9,28 +9,66 @@
 #ifndef DDSC__HOME_GLENN_CYCLONEDDS_EXAMPLES_HELLOWORLD_BUILD_BOARD_OUTPUT_DATA_H
 #define DDSC__HOME_GLENN_CYCLONEDDS_EXAMPLES_HELLOWORLD_BUILD_BOARD_OUTPUT_DATA_H
 
+#include "cartesian_sample.h"
+
+#include "curvilinear_sample.h"
+
 #include "dds/ddsc/dds_public_impl.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#ifndef DDS_SEQUENCE_DOUBLE_DEFINED
-#define DDS_SEQUENCE_DOUBLE_DEFINED
-typedef struct dds_sequence_double
+#ifndef DDS_SEQUENCE_TRAJECTORY_DATA_CARTESIAN_SAMPLE_DEFINED
+#define DDS_SEQUENCE_TRAJECTORY_DATA_CARTESIAN_SAMPLE_DEFINED
+typedef struct dds_sequence_trajectory_data_cartesian_sample
 {
   uint32_t _maximum;
   uint32_t _length;
-  double *_buffer;
+  struct trajectory_data_cartesian_sample *_buffer;
   bool _release;
-} dds_sequence_double;
+} dds_sequence_trajectory_data_cartesian_sample;
 
-#define dds_sequence_double__alloc() \
-((dds_sequence_double*) dds_alloc (sizeof (dds_sequence_double)));
+#define dds_sequence_trajectory_data_cartesian_sample__alloc() \
+((dds_sequence_trajectory_data_cartesian_sample*) dds_alloc (sizeof (dds_sequence_trajectory_data_cartesian_sample)));
 
-#define dds_sequence_double_allocbuf(l) \
-((double *) dds_alloc ((l) * sizeof (double)))
-#endif /* DDS_SEQUENCE_DOUBLE_DEFINED */
+#define dds_sequence_trajectory_data_cartesian_sample_allocbuf(l) \
+((struct trajectory_data_cartesian_sample *) dds_alloc ((l) * sizeof (struct trajectory_data_cartesian_sample)))
+#endif /* DDS_SEQUENCE_TRAJECTORY_DATA_CARTESIAN_SAMPLE_DEFINED */
+
+#ifndef DDS_SEQUENCE_TRAJECTORY_DATA_CURVILINEAR_SAMPLE_DEFINED
+#define DDS_SEQUENCE_TRAJECTORY_DATA_CURVILINEAR_SAMPLE_DEFINED
+typedef struct dds_sequence_trajectory_data_curvilinear_sample
+{
+  uint32_t _maximum;
+  uint32_t _length;
+  struct trajectory_data_curvilinear_sample *_buffer;
+  bool _release;
+} dds_sequence_trajectory_data_curvilinear_sample;
+
+#define dds_sequence_trajectory_data_curvilinear_sample__alloc() \
+((dds_sequence_trajectory_data_curvilinear_sample*) dds_alloc (sizeof (dds_sequence_trajectory_data_curvilinear_sample)));
+
+#define dds_sequence_trajectory_data_curvilinear_sample_allocbuf(l) \
+((struct trajectory_data_curvilinear_sample *) dds_alloc ((l) * sizeof (struct trajectory_data_curvilinear_sample)))
+#endif /* DDS_SEQUENCE_TRAJECTORY_DATA_CURVILINEAR_SAMPLE_DEFINED */
+
+#ifndef DDS_SEQUENCE_BOOL_DEFINED
+#define DDS_SEQUENCE_BOOL_DEFINED
+typedef struct dds_sequence_bool
+{
+  uint32_t _maximum;
+  uint32_t _length;
+  bool *_buffer;
+  bool _release;
+} dds_sequence_bool;
+
+#define dds_sequence_bool__alloc() \
+((dds_sequence_bool*) dds_alloc (sizeof (dds_sequence_bool)));
+
+#define dds_sequence_bool_allocbuf(l) \
+((bool *) dds_alloc ((l) * sizeof (bool)))
+#endif /* DDS_SEQUENCE_BOOL_DEFINED */
 
 #ifndef DDS_SEQUENCE_DOUBLE_DEFINED
 #define DDS_SEQUENCE_DOUBLE_DEFINED
@@ -51,10 +89,10 @@ typedef struct dds_sequence_double
 
 typedef struct board_output_data_msg
 {
-  dds_sequence_double x;
-  dds_sequence_double y;
-  bool feasibility;
-  double cost;
+  dds_sequence_trajectory_data_cartesian_sample samples;
+  dds_sequence_trajectory_data_curvilinear_sample samples_curv;
+  dds_sequence_bool feasibility;
+  dds_sequence_double cost;
 } board_output_data_msg;
 
 extern const dds_topic_descriptor_t board_output_data_msg_desc;

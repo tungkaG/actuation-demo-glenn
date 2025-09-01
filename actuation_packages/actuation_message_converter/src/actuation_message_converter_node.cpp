@@ -27,7 +27,6 @@ static void on_board_output_data_callback(dds_entity_t rd, void * arg)
 
   // autoware_auto_vehicle_msgs_msg_VehicleControlCommand idlc_msg {};
   board_output_data_msg idlc_msg {};
-
   void * idlc_msg_p = &idlc_msg;
   dds_sample_info_t info;
 
@@ -37,17 +36,54 @@ static void on_board_output_data_callback(dds_entity_t rd, void * arg)
     dds_log(DDS_LC_WARNING, __FILE__, __LINE__, DDS_FUNCTION, "can't take msg\n");
   }
 
-  // Check if we have read some data and if it is valid.
-  if (rc > 0 && info.valid_data) {
+  // // Check if we have read some data and if it is valid.
+  // if (rc > 0 && info.valid_data) {
 
+  //   HpcInputData rosidl_msg {};
+
+  //   rosidl_msg.x.assign(idlc_msg.x._buffer, idlc_msg.x._buffer + idlc_msg.x._length);
+  //   rosidl_msg.y.assign(idlc_msg.y._buffer, idlc_msg.y._buffer + idlc_msg.y._length);
+
+  //   rosidl_msg.feasibility = idlc_msg.feasibility;
+  //   rosidl_msg.cost = idlc_msg.cost;
+
+  //   publish(rosidl_msg);
+  // }
+  if (rc > 0 && info.valid_data) {
     HpcInputData rosidl_msg {};
 
-    rosidl_msg.x.assign(idlc_msg.x._buffer, idlc_msg.x._buffer + idlc_msg.x._length);
-    rosidl_msg.y.assign(idlc_msg.y._buffer, idlc_msg.y._buffer + idlc_msg.y._length);
+    // Convert feasibility and cost
+    rosidl_msg.feasibility.assign(idlc_msg.feasibility._buffer, idlc_msg.feasibility._buffer + idlc_msg.feasibility._length);
+    rosidl_msg.cost.assign(idlc_msg.cost._buffer, idlc_msg.cost._buffer + idlc_msg.cost._length);
 
-    rosidl_msg.feasibility = idlc_msg.feasibility;
-    rosidl_msg.cost = idlc_msg.cost;
+    // Convert Cartesian samples
+    for (size_t i = 0; i < idlc_msg.samples._length; ++i) {
+      rt_motion_planning_hpc_msgs::msg::CartesianSample sample;
+      const auto & idlc_sample = idlc_msg.samples._buffer[i];
+      sample.x.assign(idlc_sample.x._buffer, idlc_sample.x._buffer + idlc_sample.x._length);
+      sample.y.assign(idlc_sample.y._buffer, idlc_sample.y._buffer + idlc_sample.y._length);
+      sample.theta.assign(idlc_sample.theta._buffer, idlc_sample.theta._buffer + idlc_sample.theta._length);
+      sample.velocity.assign(idlc_sample.velocity._buffer, idlc_sample.velocity._buffer + idlc_sample.velocity._length);
+      sample.acceleration.assign(idlc_sample.acceleration._buffer, idlc_sample.acceleration._buffer + idlc_sample.acceleration._length);
+      sample.kappa.assign(idlc_sample.kappa._buffer, idlc_sample.kappa._buffer + idlc_sample.kappa._length);
+      sample.kappa_dot.assign(idlc_sample.kappaDot._buffer, idlc_sample.kappaDot._buffer + idlc_sample.kappaDot._length);
+      rosidl_msg.samples.push_back(std::move(sample));
+    }
 
+    // Convert Curvilinear samples
+    for (size_t i = 0; i < idlc_msg.samples_curv._length; ++i) {
+      rt_motion_planning_hpc_msgs::msg::CurvilinearSample sample_curv;
+      const auto & idlc_sample_curv = idlc_msg.samples_curv._buffer[i];
+      sample_curv.s.assign(idlc_sample_curv.s._buffer, idlc_sample_curv.s._buffer + idlc_sample_curv.s._length);
+      sample_curv.ss.assign(idlc_sample_curv.ss._buffer, idlc_sample_curv.ss._buffer + idlc_sample_curv.ss._length);
+      sample_curv.sss.assign(idlc_sample_curv.sss._buffer, idlc_sample_curv.sss._buffer + idlc_sample_curv.sss._length);
+      sample_curv.d.assign(idlc_sample_curv.d._buffer, idlc_sample_curv.d._buffer + idlc_sample_curv.d._length);
+      sample_curv.dd.assign(idlc_sample_curv.dd._buffer, idlc_sample_curv.dd._buffer + idlc_sample_curv.dd._length);
+      sample_curv.ddd.assign(idlc_sample_curv.ddd._buffer, idlc_sample_curv.ddd._buffer + idlc_sample_curv.ddd._length);
+      rosidl_msg.samples_curv.push_back(std::move(sample_curv));
+    }
+
+    // Publish the converted message
     publish(rosidl_msg);
   }
 }

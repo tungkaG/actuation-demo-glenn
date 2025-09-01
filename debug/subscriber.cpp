@@ -2,34 +2,114 @@
 #include <iostream>
 #include <cstdlib>
 #include <cstring>
+#include <vector>
+#include <random>
 
 #include "msg/board_input_data.h"
 #include "msg/board_output_data.h"  // new header for publishing
+#include "msg/cartesian_sample.h"
+#include "msg/curvilinear_sample.h"
 
 #include <Eigen/Dense>
 
-// inline dds_sequence_double vectorToDdsSequence(const Eigen::VectorXd& vec)
-// {
-//     dds_sequence_double seq;
-//     seq._maximum = static_cast<uint32_t>(vec.size());
-//     seq._length  = static_cast<uint32_t>(vec.size());
-//     seq._buffer  = static_cast<double*>(dds_alloc(seq._maximum * sizeof(double)));
-//     seq._release = true;
-//     std::memcpy(seq._buffer, vec.data(), seq._length * sizeof(double));
-//     return seq;
-// }
+// === Constants ===
+constexpr uint32_t N = 3; // Number of trajectory samples
 
-inline void fillDdsSequence(dds_sequence_double& dst, const Eigen::VectorXd& vec)
-{
-  const uint32_t need = static_cast<uint32_t>(vec.size());
-  if (dst._maximum < need || dst._buffer == nullptr) {
-    if (dst._buffer && dst._release) dds_free(dst._buffer);
-    dst._buffer  = static_cast<double*>(dds_alloc(need * sizeof(double)));
-    dst._maximum = need;
-    dst._release = true;
+// === Sample data structures ===
+struct CartesianSample {
+  Eigen::VectorXd x, y, theta, velocity, acceleration, kappa, kappaDot;
+};
+
+struct CurviLinearSample {
+  Eigen::VectorXd s, ss, sss, d, dd, ddd;
+};
+
+struct Trajectory {
+  CartesianSample m_cartesianSample;
+  CurviLinearSample m_curvilinearSample;
+  bool m_feasible;
+  double m_cost;
+};
+
+struct TrajectoryHandler {
+  std::vector<Trajectory> m_trajectories;
+
+  TrajectoryHandler() {
+    std::mt19937 gen(42); // fixed seed
+    std::uniform_real_distribution<double> dist(-10.0, 10.0);
+
+    for (uint32_t i = 0; i < N; ++i) {
+      Trajectory traj;
+
+      // Fill CartesianSample with 5 points each
+      traj.m_cartesianSample.x = Eigen::VectorXd::LinSpaced(5, i, i + 4);
+      traj.m_cartesianSample.y = Eigen::VectorXd::LinSpaced(5, i + 10, i + 14);
+      traj.m_cartesianSample.theta = Eigen::VectorXd::Constant(5, 0.1 * i);
+      traj.m_cartesianSample.velocity = Eigen::VectorXd::Constant(5, 1.0 + i);
+      traj.m_cartesianSample.acceleration = Eigen::VectorXd::Constant(5, 0.2 * i);
+      traj.m_cartesianSample.kappa = Eigen::VectorXd::Constant(5, 0.05 * i);
+      traj.m_cartesianSample.kappaDot = Eigen::VectorXd::Constant(5, 0.01 * i);
+
+      // Fill CurviLinearSample with 5 points each
+      traj.m_curvilinearSample.s = Eigen::VectorXd::LinSpaced(5, i, i + 4);
+      traj.m_curvilinearSample.ss = Eigen::VectorXd::Constant(5, 0.2 * i);
+      traj.m_curvilinearSample.sss = Eigen::VectorXd::Constant(5, 0.05 * i);
+      traj.m_curvilinearSample.d = Eigen::VectorXd::Constant(5, -0.1 * i);
+      traj.m_curvilinearSample.dd = Eigen::VectorXd::Constant(5, 0.01 * i);
+      traj.m_curvilinearSample.ddd = Eigen::VectorXd::Constant(5, 0.005 * i);
+
+      traj.m_feasible = (i % 2 == 0); // alternate true/false
+      traj.m_cost = dist(gen);
+
+      m_trajectories.push_back(traj);
+    }
   }
-  dst._length = need;
-  std::memcpy(dst._buffer, vec.data(), need * sizeof(double));
+};
+
+TrajectoryHandler trajectory_handler;
+
+// generic grow helper, tells you if it allocated a new buffer
+static inline void ensure_seq_capacity(void** buf, uint32_t* maximum, bool* release,
+                                       uint32_t need, size_t elem_size,
+                                       bool* newly_allocated) {
+  *newly_allocated = false;
+  if (*maximum < need || *buf == nullptr) {
+    if (*buf && *release) dds_free(*buf);
+    *buf = dds_alloc(need * elem_size);
+    *maximum = need;
+    *release = true;
+    *newly_allocated = true;
+  }
+}
+
+static inline void fill_seq_double(dds_sequence_double* dst, const Eigen::VectorXd& vec) {
+  const uint32_t n = static_cast<uint32_t>(vec.size());
+  bool newbuf = false;
+  ensure_seq_capacity((void**)&dst->_buffer, &dst->_maximum, &dst->_release,
+                      n, sizeof(double), &newbuf);
+  dst->_length = n;
+  if (n) std::memcpy(dst->_buffer, vec.data(), n * sizeof(double));
+}
+
+static inline void fill_cartesian_sample(trajectory_data_cartesian_sample* out,
+                                         const CartesianSample& in) {
+  fill_seq_double(&out->x,            in.x);
+  fill_seq_double(&out->y,            in.y);
+  fill_seq_double(&out->theta,        in.theta);
+  fill_seq_double(&out->velocity,     in.velocity);
+  fill_seq_double(&out->acceleration, in.acceleration);
+  fill_seq_double(&out->kappa,        in.kappa);
+  fill_seq_double(&out->kappaDot,     in.kappaDot);
+}
+
+static inline void fill_curvilinear_sample(trajectory_data_curvilinear_sample* out,
+                                         const CurviLinearSample& in) {
+  fill_seq_double(&out->s,            in.s);
+  fill_seq_double(&out->ss,           in.ss);
+  fill_seq_double(&out->sss,          in.sss);
+  fill_seq_double(&out->d,            in.d);
+  fill_seq_double(&out->dd,           in.dd);
+  fill_seq_double(&out->ddd,          in.ddd);
 }
 
 int main() {
@@ -86,42 +166,54 @@ int main() {
     samples[0] = &msg;
 
     // ============== Prepare static board_output_data_msg =============================
-    board_output_data_msg output_msg{};
-    
-    // Prepare example Eigen vectors
-    Eigen::VectorXd x_vec(3);
-    x_vec << 1.0, 2.0, 3.0;
+    static board_output_data_msg output_msg{};
 
-    Eigen::VectorXd y_vec(3);
-    y_vec << 4.0, 5.0, 6.0;
+    static bool called_once = false;
+    if (!called_once) {
+        // allocate arrays once
+        output_msg.samples._buffer =
+            static_cast<trajectory_data_cartesian_sample*>(dds_alloc(N * sizeof(trajectory_data_cartesian_sample)));
+        std::memset(output_msg.samples._buffer, 0, N *  sizeof(trajectory_data_cartesian_sample));
+        output_msg.samples._maximum = N;
+        output_msg.samples._length  = N;
+        output_msg.samples._release = true;
 
-    fillDdsSequence(output_msg.x, x_vec);
-    fillDdsSequence(output_msg.y, y_vec);
-    output_msg.feasibility = true;
-    output_msg.cost = 0.42;
+        output_msg.samples_curv._buffer =
+            static_cast<trajectory_data_curvilinear_sample*>(dds_alloc(N * sizeof(trajectory_data_curvilinear_sample)));
+        std::memset(output_msg.samples_curv._buffer, 0, N *  sizeof(trajectory_data_curvilinear_sample));
+        output_msg.samples_curv._maximum = N;
+        output_msg.samples_curv._length  = N;
+        output_msg.samples_curv._release = true;
+
+        output_msg.feasibility._buffer =
+            static_cast<bool*>(dds_alloc(N * sizeof(bool)));
+        output_msg.feasibility._maximum = N;
+        output_msg.feasibility._length  = N;
+        output_msg.feasibility._release = true;
+
+        output_msg.cost._buffer =
+            static_cast<double*>(dds_alloc(N * sizeof(double)));
+        output_msg.cost._maximum = N;
+        output_msg.cost._length  = N;
+        output_msg.cost._release = true;
+
+        called_once = true;
+    }
+
+    // overwrite each element
+    for (uint32_t i = 0; i < N; ++i) {
+        const auto& t = trajectory_handler.m_trajectories[i];
+
+        trajectory_data_cartesian_sample* s_cart = &output_msg.samples._buffer[i];
+        fill_cartesian_sample(s_cart, t.m_cartesianSample);
+
+        trajectory_data_curvilinear_sample* s_curv = &output_msg.samples_curv._buffer[i];
+        fill_curvilinear_sample(s_curv, t.m_curvilinearSample);
+
+        output_msg.feasibility._buffer[i] = t.m_feasible;
+        output_msg.cost._buffer[i]        = t.m_cost;
+    }
     // ============== Prepare static board_output_data_msg =============================
-
-    // ====================== Allocate and assign sequence values ===========================
-    // size_t len = 3;
-    // output_msg.x._length = len;
-    // output_msg.x._maximum = len;
-    // output_msg.x._release = true;
-    // output_msg.x._buffer = static_cast<double *>(malloc(len * sizeof(double)));
-    // output_msg.x._buffer[0] = 1.0;
-    // output_msg.x._buffer[1] = 2.0;
-    // output_msg.x._buffer[2] = 3.0;
-
-    // output_msg.y._length = len;
-    // output_msg.y._maximum = len;
-    // output_msg.y._release = true;
-    // output_msg.y._buffer = static_cast<double *>(malloc(len * sizeof(double)));
-    // output_msg.y._buffer[0] = 4.0;
-    // output_msg.y._buffer[1] = 5.0;
-    // output_msg.y._buffer[2] = 6.0;
-
-    // output_msg.feasibility = true;
-    // output_msg.cost = 0.42;
-    // ====================== Allocate and assign sequence values ===========================
 
     // === Main loop ===
     while (true) {
@@ -158,8 +250,6 @@ int main() {
     }
 
     // === Cleanup
-    free(output_msg.x._buffer);
-    free(output_msg.y._buffer);
     dds_delete(participant);
 
     return 0;

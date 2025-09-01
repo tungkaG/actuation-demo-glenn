@@ -110,5 +110,6 @@ if [ "${PARTIAL_BUILD}" = "0" ] || [ "${AUTOWARE_ONLY}" = "1" ]; then
   mkdir -p src
   vcs import src < ../autoware_depends.repos
   popd
-  MAKEFLAGS='-j 10' colcon build --parallel-workers 10 --packages-up-to actuation_demos actuation_format_bag --build-base build/autoware --cmake-args -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON --base-paths autoware actuation_packages
+  # MAKEFLAGS='-j 10' colcon build --parallel-workers 10 --packages-up-to actuation_demos actuation_format_bag --build-base build/autoware --cmake-args -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON --base-paths autoware actuation_packages
+  MAKEFLAGS='-j 10' colcon build --parallel-workers 10 --packages-select actuation_message_converter actuation_msgs rt_motion_planning_hpc_msgs rt_motion_planning_hpc_pkg --build-base build/autoware --cmake-args -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON --base-paths autoware actuation_packages
 fi
