@@ -1,0 +1,17 @@
+module board_input_data
+{
+  struct msg
+  {
+    double s;                   
+    double ss;                   
+    double sss;               
+    double d;            
+    double dd;        
+    double ddd;
+
+    double velocity;
+    double timestep;
+    double orientation;
+    double desired_velocity;
+  };
+};

@@ -1,0 +1,13 @@
+docker run -it -v $(pwd):$(pwd) -w $(pwd) --net host -v /tmp/.X11-unix:/tmp/.X11-unix:rw -v ${HOME}/.Xauthority:${HOME}/.Xauthority:rw -e XAUTHORITY=${HOME}/.Xauthority -e DISPLAY=${DISPLAY} actuation_zephyr-image
+
+use tmux and have 3 terminal, run in three of them:
+cd actuation-demo-glenn
+source install/setup.bash
+export ROS_DOMAIN_ID=1
+export CYCLONEDDS_URI=$(pwd)/cyclonedds.xml
+
+1. ros2 run rt_motion_planning_hpc_pkg node
+2. ros2 launch actuation_message_converter actuation_message_converter.launch.py
+3.  cd debug/build
+    make
+    ./subscriber

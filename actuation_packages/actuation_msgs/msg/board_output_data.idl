@@ -1,0 +1,10 @@
+module board_output_data
+{
+  struct msg
+  {
+    sequence<double> x;
+    sequence<double> y;
+    boolean feasibility;
+    double cost;
+  };
+};
