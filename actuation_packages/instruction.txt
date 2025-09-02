@@ -6,7 +6,7 @@ source install/setup.bash
 export ROS_DOMAIN_ID=1
 export CYCLONEDDS_URI=$(pwd)/cyclonedds.xml
 
-1. ros2 ros2 launch rosbridge_server rosbridge_websocket_launch.xml
+1. ros2 launch rosbridge_server rosbridge_websocket_launch.xml
 2. ros2 launch actuation_message_converter actuation_message_converter.launch.py
 3.  cd debug/build
     make

@@ -83,6 +83,8 @@ static void on_board_output_data_callback(dds_entity_t rd, void * arg)
       rosidl_msg.samples_curv.push_back(std::move(sample_curv));
     }
 
+    rosidl_msg.sampling_latency_ms = idlc_msg.sampling_latency_ms;
+
     // Publish the converted message
     publish(rosidl_msg);
   }
